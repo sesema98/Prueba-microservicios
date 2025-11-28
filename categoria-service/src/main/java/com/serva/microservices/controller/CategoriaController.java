@@ -3,11 +3,9 @@ package com.serva.microservices.controller;
 
 import com.serva.microservices.model.Categoria;
 import com.serva.microservices.repository.CategoriaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -35,6 +33,42 @@ public class CategoriaController {
     public ResponseEntity<Categoria> obtenerPorId(@PathVariable Long id) {
         return repository.findById(id)
                 .map(ResponseEntity::ok) // si existe -> 200 OK
-                .orElse(ResponseEntity.notFound().build()); // si no existe -> 404
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)); // si no existe -> 404
+    }
+
+    // --------------------------------
+    // CREAR CATEGORÍA
+    // --------------------------------
+    @PostMapping
+    public ResponseEntity<Categoria> crear(@RequestBody Categoria categoria) {
+        Categoria nueva = repository.save(categoria);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nueva);
+    }
+
+    // --------------------------------
+    // ACTUALIZAR CATEGORÍA
+    // --------------------------------
+    @PutMapping("/{id}")
+    public ResponseEntity<Categoria> actualizar(@PathVariable Long id, @RequestBody Categoria categoria) {
+        return repository.findById(id)
+                .map(existing -> {
+                    categoria.setId(existing.getId());
+                    Categoria actualizada = repository.save(categoria);
+                    return ResponseEntity.ok(actualizada);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+    }
+
+    // --------------------------------
+    // ELIMINAR CATEGORÍA
+    // --------------------------------
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        if (!repository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        repository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
